@@ -4,30 +4,24 @@
 ================================================================================
 
 QUAILS is a local web application for automating thematic text analysis in
-qualitative research. It uses LLMs for inference (local via Ollama, or cloud
-providers like OpenAI, Anthropic, Google Gemini, and Azure OpenAI), a visual
-flow editor for designing multi-round analysis workflows, and enforces human
-review between analysis rounds.
+qualitative research. It uses open-weight LLMs that run entirely on your own
+computer through Ollama, and a visual flow editor for designing multi-round
+analysis workflows. At each step, QUAILS flags results that need human review:
+low-confidence decisions, rejected units, and checkpoints between analysis
+rounds.
 
 
 ================================================================================
   DATA PRIVACY NOTICE
 ================================================================================
 
-  When using OLLAMA (local) as your AI provider, NO DATA EVER LEAVES YOUR
-  MACHINE. All LLM inference runs entirely on your local hardware. This is the
-  default configuration.
+  NO DATA EVER LEAVES YOUR MACHINE. All LLM inference runs entirely on your
+  local hardware through Ollama.
 
-  When using a CLOUD PROVIDER (OpenAI, Anthropic, Google Gemini, or Azure
-  OpenAI), your document text is sent to that provider's servers for
-  processing. Be aware of research ethics, institutional review board (IRB)
-  requirements, and legal regulations (e.g., HIPAA, FERPA, GDPR) regarding
-  the use of personally identifiable information (PII) or confidential data
-  with third-party AI services. Review your provider's data usage and
-  retention policies before sending sensitive data.
-
-  YOU, THE USER, ARE SOLELY LIABLE FOR ANY THIRD-PARTY DATA SHARING THAT
-  OCCURS THROUGH YOUR USE OF THIS APPLICATION.
+  You remain responsible for handling research data in line with research
+  ethics, institutional review board (IRB) requirements, and legal
+  regulations (e.g., HIPAA, FERPA, GDPR) regarding personally identifiable
+  information (PII) or confidential data.
 
   THIS SOFTWARE IS PROVIDED "AS-IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS
   OR IMPLIED. SEE THE LICENSE FILE FOR FULL TERMS.
@@ -38,8 +32,7 @@ review between analysis rounds.
 ================================================================================
 
   QUAILS itself (Flask backend + React frontend) is lightweight. The main
-  resource demand comes from running a local LLM via Ollama. If you use a
-  cloud provider instead, the local hardware requirements are much lower.
+  resource demand comes from running a local LLM via Ollama.
 
   The specs below target efficient processing of substantive datasets
   (1,000+ text units across multiple documents) with a local LLM.
@@ -74,23 +67,11 @@ review between analysis rounds.
       GPU:      Not required (CPU-only mode)
       Storage:  5 GB free
 
-  ---- USING A CLOUD PROVIDER (OpenAI, Anthropic, Google, Azure) ----------------
-
-  When using a cloud provider, Ollama is not needed and the local hardware
-  requirements are minimal -- the LLM runs on the provider's servers.
-
-      CPU:      Any modern dual-core processor
-      RAM:      4 GB minimum, 8 GB recommended
-      GPU:      Not required
-      Storage:  2 GB free (app + project data)
-      Network:  Stable internet connection required
-      OS:       Windows 10/11, macOS 13+, or Linux
-
   ---- NOTES -------------------------------------------------------------------
 
   - Dataset size impact: A corpus of 5,000+ units with multi-block flows will
-    use more memory for in-process data. 16 GB RAM is recommended regardless
-    of provider choice for large projects.
+    use more memory for in-process data. 16 GB RAM is recommended for large
+    projects.
   - Ollama model sizes: ~4B models need ~3 GB disk + ~5 GB RAM at runtime.
     ~8B models need ~5 GB disk + ~8 GB RAM. 70B+ models need 40+ GB RAM.
   - Analysis speed with Ollama depends heavily on GPU. Expect ~2-10 units/sec
@@ -133,18 +114,13 @@ these, skip to section 2.
      Use the default settings during installation.
      To verify: open a terminal and type: git --version
 
-  D) OLLAMA (for local LLM -- optional if using cloud providers)
+  D) OLLAMA (runs the LLM on your computer)
      Download: https://ollama.com/download
      After installing, open a terminal and run:
        ollama pull gemma3
      This downloads the default LLM model (~3GB). You can also use other
      models like "llama3" or "mistral" -- just pull them the same way.
      To verify: open a terminal and type: ollama list
-
-     NOTE: If you plan to use a cloud LLM provider (OpenAI, Anthropic,
-     Google Gemini, or Azure OpenAI) instead, Ollama is not required.
-     You can configure cloud providers from the AI Settings page after
-     installation.
 
 
 ================================================================================
@@ -206,9 +182,8 @@ these, skip to section 2.
 
     Then open your browser to: http://localhost:5173
 
-    If using Ollama (local), make sure it's running before starting analysis:
+    Make sure Ollama is running before starting analysis:
       ollama serve
-    If using a cloud provider, configure your API key in AI Settings first.
 
 
 ================================================================================
@@ -219,18 +194,14 @@ these, skip to section 2.
   -------------------------
   - Click "AI Settings" on the home page (next to "New Project")
   - By default, QUAILS uses Ollama (local) with the gemma3 model
-  - To use a cloud provider instead:
-    1. Enter your API key for OpenAI, Anthropic, Google, or Azure
-    2. Click "Save Key"
-    3. Click "Load Models" to see available models
-    4. Select a model from the dropdown
-    5. Click "Set as Active"
+  - To use another model:
+    1. Click "Load Models" to see the models installed in Ollama
+    2. Select a model from the dropdown
+    3. Click "Set as Active"
   - The health banner at the top shows your current connection status
-  - API keys are stored locally in backend/.env (never sent anywhere)
 
-  ** PRIVACY NOTE: Using Ollama keeps all data on your machine. Cloud
-     providers will transmit your document text to external servers.
-     See the DATA PRIVACY NOTICE at the top of this file. **
+  ** PRIVACY NOTE: All analysis runs locally; your data stays on your
+     machine. See the DATA PRIVACY NOTICE at the top of this file. **
 
   STEP 1: CREATE A PROJECT
   -------------------------
@@ -268,7 +239,8 @@ these, skip to section 2.
 
   Connect blocks by dragging from one block's bottom handle to another's
   top handle. Human Review checkpoints are automatically inserted between
-  analysis blocks.
+  analysis blocks, flagging where you should review and correct results
+  before running the next block.
 
   Click any block to open its settings panel on the right:
     - Open-Coding Analysis: set detection prompt, label prompt, thresholds
@@ -303,6 +275,14 @@ these, skip to section 2.
 
   STEP 7: REVIEW RESULTS
   -------------------------
+  QUAILS flags what needs human review at each step:
+    - Low-confidence decisions are color-coded so you can review them first
+    - Units judged not relevant are kept in a separate "_false" file for audit
+    - Rubric scores below the confidence threshold are left blank for you
+      to score by hand
+    - Review checkpoints between blocks mark where to check results before
+      the next round. Run blocks one at a time to review between rounds.
+
   - "Data Browser" tab: view CSV outputs in a spreadsheet grid
     - Enter the block ID and filename, click Load
     - Confidence scores are color-coded (green=high, yellow=medium, red=low)
@@ -338,12 +318,11 @@ these, skip to section 2.
        from https://www.python.org/downloads/release/python-3128/
 
   PROBLEM: Ollama not connecting / LLM not responding
-  FIX: If using Ollama (local), make sure it's running:
+  FIX: Make sure Ollama is running:
        ollama serve
        And that you have a model installed:
        ollama pull gemma3
-       If using a cloud provider, check AI Settings to verify your API key
-       is saved and the health banner shows "Connected".
+       Then check that the AI Settings health banner shows "Connected".
 
   PROBLEM: "Port 5174 already in use"
   FIX: Another app is using port 5174. Either close it, or edit
@@ -357,11 +336,10 @@ these, skip to section 2.
        Open http://localhost:5173 (not 5174).
 
   PROBLEM: "Analysis stopped" or "LLM error" in console
-  FIX: Check that your selected LLM provider is connected. Go to AI Settings
-       and verify the health banner shows "Connected". If using Ollama:
+  FIX: Check that Ollama is connected. Go to AI Settings and verify the
+       health banner shows "Connected". Then try:
        ollama list
        ollama run gemma3 "hello"
-       If using a cloud provider, verify your API key is valid.
 
   PROBLEM: File upload fails
   FIX: Check the file format is supported (.txt .md .csv .xlsx .xls .numbers
@@ -385,7 +363,7 @@ these, skip to section 2.
   │   ├── app.py             <-- Backend entry point
   │   ├── config.py          <-- Configuration and defaults
   │   ├── requirements.txt   <-- Python package list
-  │   ├── .env               <-- API keys & model selection (auto-created)
+  │   ├── .env               <-- Model selection and settings (auto-created)
   │   ├── api/               <-- REST API endpoints
   │   └── services/          <-- Business logic
   ├── frontend/              <-- React/Vite web interface

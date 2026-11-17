@@ -35,14 +35,14 @@
 
 <p style="margin-bottom: 1.25rem;">
   QUAILS is a local web application for automating <b>thematic text analysis</b>
-  in qualitative research. It uses large language models (LLMs) for inference &mdash;
-  either locally via <a href="https://ollama.com" target="_blank" style="color: #4f46e5;">Ollama</a>,
-  or through cloud providers like OpenAI, Anthropic, Google Gemini, and Azure OpenAI.
+  in qualitative research. It uses large language models (LLMs) that run entirely on
+  your own computer via <a href="https://ollama.com" target="_blank" style="color: #4f46e5;">Ollama</a>.
 </p>
 
 <p style="margin-bottom: 1.25rem;">
   QUAILS provides a <b>visual flow editor</b> for designing multi-round analysis
-  workflows and enforces <b>human review checkpoints</b> between analysis rounds,
+  workflows. At each step, results that need <b>human review</b> are flagged &mdash;
+  low-confidence decisions, rejected units, and checkpoints between analysis rounds &mdash;
   keeping researchers in control of the analytical process.
 </p>
 
@@ -54,7 +54,8 @@
   <li style="margin-bottom: 0.5rem;"><b>Visual flow editor</b> &mdash; Design analysis pipelines with drag-and-drop blocks: Open-Coding Analysis, Theme Identification, Category Builder, and Custom Prompt</li>
   <li style="margin-bottom: 0.5rem;"><b>Model alignment</b> &mdash; Calibrate LLM performance against your own human coding using Cohen's Kappa</li>
   <li style="margin-bottom: 0.5rem;"><b>Configurable thresholds</b> &mdash; Set confidence levels for detection, labeling, and theme assignment</li>
-  <li style="margin-bottom: 0.5rem;"><b>Multiple AI providers</b> &mdash; Use Ollama (local), OpenAI, Anthropic, Google Gemini, or Azure OpenAI</li>
+  <li style="margin-bottom: 0.5rem;"><b>Fully local AI</b> &mdash; Runs open-weight models through Ollama on your own hardware</li>
+  <li style="margin-bottom: 0.5rem;"><b>Human review flagging</b> &mdash; Low-confidence results and review checkpoints are flagged at each step so you know where to look</li>
   <li style="margin-bottom: 0.5rem;"><b>Data browser</b> &mdash; Explore analysis results in an interactive spreadsheet with color-coded confidence scores</li>
   <li style="margin-bottom: 0.5rem;"><b>Version-controlled projects</b> &mdash; Every project has its own git history for full traceability</li>
   <li style="margin-bottom: 0.5rem;"><b>Automated reports</b> &mdash; Generate comprehensive Markdown analysis reports</li>
@@ -72,27 +73,17 @@
   </p>
 
   <p style="color: #374151; margin-bottom: 0.75rem;">
-    <strong>When using Ollama (local AI):</strong> No data ever leaves your machine.
-    All AI inference runs entirely on your local hardware and
-    <strong>no internet connection is required</strong> for analysis.
-    Your documents, results, and API keys remain completely private on your computer.
+    <strong>No data ever leaves your machine.</strong>
+    All AI inference runs entirely on your local hardware through Ollama and
+    <strong>no internet connection is required</strong> for analysis once a model is downloaded.
+    Your documents and results remain completely private on your computer.
   </p>
 
   <p style="color: #374151; margin-bottom: 0.75rem;">
-    <strong>When using a cloud AI provider</strong> (OpenAI, Anthropic, Google Gemini, or Azure OpenAI):
-    Your document text is transmitted to that provider's servers over the internet for processing.
-    Data sent via these APIs is <strong>not private</strong> in the same way as local processing &mdash;
-    it is subject to each provider's data retention and usage policies.
-    <strong>You are solely liable</strong> for any data you choose to transmit to a third-party service
-    through this application.
-  </p>
-
-  <p style="color: #374151; margin-bottom: 0.75rem;">
-    Before using cloud providers with research data, consider your obligations under applicable
-    research ethics frameworks, institutional review board (IRB) requirements, and legal regulations
+    You remain responsible for handling research data in line with applicable research ethics
+    frameworks, institutional review board (IRB) requirements, and legal regulations
     including HIPAA, FERPA, GDPR, and any other laws governing personally identifiable,
-    sensitive, or confidential information. When in doubt, use Ollama for fully local,
-    offline analysis.
+    sensitive, or confidential information.
   </p>
 
   <h3 style="color: #166534; font-size: 1rem; margin-top: 1rem;">Error Reports &amp; Suggestions</h3>

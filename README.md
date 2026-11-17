@@ -1,14 +1,14 @@
 # QUAILS — Qualitative AI Labeling Support
 
-A local Python/React/Flask web application for automating thematic text analysis in qualitative research. Uses LLMs for inference — local via Ollama, or cloud providers (OpenAI, Anthropic, Google Gemini, Azure OpenAI) — with a visual flow editor for designing multi-round analysis workflows and enforced human review between rounds.
+A local Python/React/Flask web application for automating thematic text analysis in qualitative research. Uses open-weight LLMs that run entirely on your own computer through Ollama, with a visual flow editor for designing multi-round analysis workflows. At each step, QUAILS flags results that need human review: low-confidence decisions, rejected units, and checkpoints between analysis rounds.
 
-> **Data Privacy:** When using **Ollama (local)**, no data ever leaves your machine — all LLM inference runs entirely on your local hardware. When using a **cloud provider**, your document text is sent to that provider's servers. Be aware of research ethics, IRB requirements, and legal regulations (HIPAA, FERPA, GDPR, etc.) regarding personally identifiable information (PII) or confidential data with third-party AI services. **You are solely liable for any third-party data sharing that occurs through your use of this application.** This software is provided "AS-IS" without warranty of any kind.
+> **Data Privacy:** No data ever leaves your machine — all LLM inference runs entirely on your local hardware through Ollama. You remain responsible for handling research data in line with research ethics, IRB requirements, and legal regulations (HIPAA, FERPA, GDPR, etc.) regarding personally identifiable information (PII) or confidential data. This software is provided "AS-IS" without warranty of any kind.
 
 ## Prerequisites
 
 - Python 3.14+
 - Node.js 24+ / npm 11+
-- Ollama (with at least one model installed, e.g., `gemma3`) — *optional if using a cloud provider*
+- Ollama (with at least one model installed, e.g., `gemma3`)
 - Git
 
 ## Setup
@@ -47,7 +47,7 @@ npm run dev
 ```
 Frontend runs on http://localhost:5173 (proxies API calls to Flask)
 
-If using Ollama, ensure it is running (`ollama serve`) — the app will attempt to auto-start it if not. If using a cloud provider, configure your API key in **AI Settings** from the home page.
+Ensure Ollama is running (`ollama serve`) — the app will attempt to auto-start it if not. Choose the model to use in **AI Settings** from the home page.
 
 ## Hardware & performance (Apple Silicon, NVIDIA GB10 / DGX Spark, unified memory)
 
@@ -71,7 +71,7 @@ QUAILS is tuned for unified-memory machines, where the GPU uses most of system R
 
 - **Backend**: Flask + Flask-SocketIO + Flask-CORS. REST API for all data operations, WebSocket for real-time console/progress.
 - **Frontend**: React 19 + Vite + Tailwind CSS 4. Uses @xyflow/react for the flow editor, AG Grid for data browsing.
-- **LLM**: Multi-provider support — Ollama (local), OpenAI, Anthropic, Google Gemini, Azure OpenAI. Provider and model selection managed via the AI Settings page. API keys stored locally in `backend/.env` (gitignored).
+- **LLM**: Local inference through Ollama. Model selection is managed on the AI Settings page and stored locally in `backend/.env` (gitignored).
 - **Data**: JSON-backed project files, CSV outputs, per-project git repos for version control.
 
 ## Block Types
@@ -84,7 +84,7 @@ QUAILS is tuned for unified-memory machines, where the GPU uses most of system R
 ## Key Features
 
 - Visual flow editor with drag-and-drop block placement
-- Auto-inserted human review gates between analysis blocks
+- Human review flagged at each step: low-confidence results are color-coded, rejected units are kept for audit, and review checkpoints are auto-inserted between analysis blocks
 - Confidence scoring via logprob extraction
 - Model alignment testing with Cohen's Kappa
 - Prompt optimization loop
@@ -92,5 +92,4 @@ QUAILS is tuned for unified-memory machines, where the GPU uses most of system R
 - Per-project git version control
 - Resume-able analysis (crash recovery)
 - Multi-format document support (txt, md, csv, xlsx, xls, numbers, docx, pdf, html)
-- Multi-provider LLM support with API key management
 - Full local processing with Ollama — no data leaves your machine

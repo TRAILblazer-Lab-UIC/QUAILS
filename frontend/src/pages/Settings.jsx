@@ -13,7 +13,6 @@ import {
   getSettingsHealth,
 } from '../api'
 
-const PROVIDER_ORDER = ['ollama', 'openai', 'anthropic', 'google', 'azure']
 
 export default function Settings() {
   const [providers, setProviders] = useState([])
@@ -147,10 +146,8 @@ export default function Settings() {
     }))
   }
 
-  // Sort providers in defined order
-  const sortedProviders = [...providers].sort(
-    (a, b) => PROVIDER_ORDER.indexOf(a.id) - PROVIDER_ORDER.indexOf(b.id)
-  )
+  // QUAILS runs inference locally through Ollama only
+  const sortedProviders = providers.filter(p => p.id === 'ollama')
 
   return (
     <div className="min-h-screen p-8">
@@ -170,7 +167,7 @@ export default function Settings() {
           <img src="/logo.png" alt="Logo for the QUAILS system" className="h-12" />
           <div>
             <h1 className="text-xl font-semibold text-gray-900">AI Model Settings</h1>
-            <p className="text-gray-600 text-sm">Manage LLM providers and API keys</p>
+            <p className="text-gray-600 text-sm">Choose the local Ollama model used for analysis</p>
           </div>
         </div>
 
@@ -214,40 +211,8 @@ export default function Settings() {
             developer at any time.{' '}
             <strong>Ollama (Local):</strong> No data leaves your machine and no internet connection
             is required for AI analysis once you have downloaded an LLM model to run the AI on your own computer.{' '}
-            <strong>Cloud providers:</strong> Your document text is sent to that provider's servers
-            for processing. Be aware of research ethics, IRB requirements, and legal regulations
+            Be aware of research ethics, IRB requirements, and legal regulations
             (HIPAA, FERPA, GDPR) regarding personally identifiable information or confidential data.
-            You are solely liable for any third-party data sharing that occurs through this application.
-          </p>
-        </div>}
-
-        {/* AI Provider explainer */}
-        {!pageLoading && <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900 space-y-2">
-          <p>
-            <strong>What is a third-party AI provider?</strong>{' '}
-            Companies like OpenAI, Anthropic, Google, and Microsoft offer powerful AI models
-            that run on their servers in the cloud. To use them, you send your text to their
-            servers over the internet and receive a response. This requires an internet connection
-            and you will typically be charged per use.
-            This is different from Ollama, which runs an AI model entirely on your own computer
-            with no internet required.
-          </p>
-          <p>
-            <strong>What is an API key?</strong>{' '}
-            An API key is a private password that identifies you to a cloud AI provider.
-            You create one on the provider's website, then paste it here. Keep it secret —
-            anyone who has it can use your account and incur charges on your behalf.
-          </p>
-          <p>
-            For setup instructions, see the{' '}
-            <a
-              href="/api/about/readme"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium underline underline-offset-2 hover:text-blue-700"
-            >
-              README.txt
-            </a>.
           </p>
         </div>}
 
