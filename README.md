@@ -1,5 +1,8 @@
 # QUAILS — Qualitative AI Labeling Support
 
+**[UIC TRAILblazer Lab](https://www.trailblazerlab.org)** · Jeremy Riel, PI<br>
+*Developed with support from the U.S. NAIRR Pilot and OpenAI.*
+
 A local Python/React/Flask web application for automating thematic text analysis in qualitative research. Uses open-weight LLMs that run entirely on your own computer through Ollama, with a visual flow editor for designing multi-round analysis workflows. At each step, QUAILS flags results that need human review: low-confidence decisions, rejected units, and checkpoints between analysis rounds.
 
 > **Data Privacy:** No data ever leaves your machine — all LLM inference runs entirely on your local hardware through Ollama. You remain responsible for handling research data in line with research ethics, IRB requirements, and legal regulations (HIPAA, FERPA, GDPR, etc.) regarding personally identifiable information (PII) or confidential data. This software is provided "AS-IS" without warranty of any kind.
