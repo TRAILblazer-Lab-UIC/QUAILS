@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" alt="QUAILS logo" width="440">
+</p>
+
 # QUAILS — Qualitative AI Labeling Support
 
 **[UIC TRAILblazer Lab](https://www.trailblazerlab.org)** · Jeremy Riel, PI<br>
