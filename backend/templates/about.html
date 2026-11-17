@@ -1,0 +1,156 @@
+<!--
+  QUAILS About Page Template
+  ==========================
+  This file is a standalone HTML template served by the backend.
+  You can edit it freely using basic HTML tags: <h1>, <h2>, <p>, <a>, <b>,
+  <strong>, <em>, <ul>, <li>, <br>, <hr>, etc.
+
+  Template variables (injected automatically from config.py):
+    {{ title }}         - App title
+    {{ version }}       - Version number
+    {{ version_date }}  - Version date
+    {{ url }}           - App URL
+    {{ author }}        - Author name
+    {{ license }}       - License name
+    {{ license_url }}   - License document URL
+    {{ logo_url }}      - Path to the logo image
+-->
+
+<div style="text-align: center; margin-bottom: 2rem;">
+  <img src="/logo.png" alt="Logo for the QUAILS system" style="height: 8rem; margin: 0 auto 1.25rem auto; display: block;" />
+  <h1 style="margin: 0; font-size: 1.8rem; color: #111827;">QUAILS: Qualitative AI Labeling Support</h1>
+</div>
+
+<p style="text-align: center; color: #6b7280; margin-bottom: 2rem;">
+  Version {{ version }} &middot; {{ version_date }}<br />
+  Author: <a href="{{ author_url }}" target="_blank" style="color: #4f46e5;"><strong>{{ author }}</strong></a><br />
+  <a href="{{ url }}" target="_blank" style="color: #4f46e5;">{{ url }}</a>
+  &middot;
+  License: <a href="{{ license_url }}" target="_blank" style="color: #4f46e5;">{{ license }}</a>
+</p>
+
+<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0;" />
+
+<h2 style="color: #111827; font-size: 1.2rem;">What is QUAILS?</h2>
+
+<p style="margin-bottom: 1.25rem;">
+  QUAILS is a local web application for automating <b>thematic text analysis</b>
+  in qualitative research. It uses large language models (LLMs) for inference &mdash;
+  either locally via <a href="https://ollama.com" target="_blank" style="color: #4f46e5;">Ollama</a>,
+  or through cloud providers like OpenAI, Anthropic, Google Gemini, and Azure OpenAI.
+</p>
+
+<p style="margin-bottom: 1.25rem;">
+  QUAILS provides a <b>visual flow editor</b> for designing multi-round analysis
+  workflows and enforces <b>human review checkpoints</b> between analysis rounds,
+  keeping researchers in control of the analytical process.
+</p>
+
+<h2 style="color: #111827; font-size: 1.2rem; margin-top: 2rem;">Key Features</h2>
+
+<ul style="line-height: 1.8; margin-top: 0.75rem;">
+  <li style="margin-bottom: 0.5rem;"><b>Multi-format document support</b> &mdash; Upload .txt, .md, .csv, .xlsx, .xls, .numbers, .docx, .pdf, and .html files</li>
+  <li style="margin-bottom: 0.5rem;"><b>Flexible unit segmentation</b> &mdash; Split documents by sentence, paragraph, line, or whole document</li>
+  <li style="margin-bottom: 0.5rem;"><b>Visual flow editor</b> &mdash; Design analysis pipelines with drag-and-drop blocks: Open-Coding Analysis, Theme Identification, Category Builder, and Custom Prompt</li>
+  <li style="margin-bottom: 0.5rem;"><b>Model alignment</b> &mdash; Calibrate LLM performance against your own human coding using Cohen's Kappa</li>
+  <li style="margin-bottom: 0.5rem;"><b>Configurable thresholds</b> &mdash; Set confidence levels for detection, labeling, and theme assignment</li>
+  <li style="margin-bottom: 0.5rem;"><b>Multiple AI providers</b> &mdash; Use Ollama (local), OpenAI, Anthropic, Google Gemini, or Azure OpenAI</li>
+  <li style="margin-bottom: 0.5rem;"><b>Data browser</b> &mdash; Explore analysis results in an interactive spreadsheet with color-coded confidence scores</li>
+  <li style="margin-bottom: 0.5rem;"><b>Version-controlled projects</b> &mdash; Every project has its own git history for full traceability</li>
+  <li style="margin-bottom: 0.5rem;"><b>Automated reports</b> &mdash; Generate comprehensive Markdown analysis reports</li>
+</ul>
+
+<!-- ============================================================
+     DATA PRIVACY & SECURITY - comprehensive section
+     ============================================================ -->
+<div style="margin: 2rem 0; padding: 1.25rem 1.5rem; background: #f0fdf4; border: 2px solid #16a34a; border-radius: 0.75rem;">
+  <h2 style="color: #166534; font-size: 1.1rem; margin-top: 0;">Data Privacy &amp; Security</h2>
+
+  <p style="color: #166534; font-size: 1.05rem; font-weight: 600; margin-bottom: 0.75rem;">
+    No data is ever sent to the developer of this application.
+    QUAILS runs entirely on your own computer and has no connection to its developers.
+  </p>
+
+  <p style="color: #374151; margin-bottom: 0.75rem;">
+    <strong>When using Ollama (local AI):</strong> No data ever leaves your machine.
+    All AI inference runs entirely on your local hardware and
+    <strong>no internet connection is required</strong> for analysis.
+    Your documents, results, and API keys remain completely private on your computer.
+  </p>
+
+  <p style="color: #374151; margin-bottom: 0.75rem;">
+    <strong>When using a cloud AI provider</strong> (OpenAI, Anthropic, Google Gemini, or Azure OpenAI):
+    Your document text is transmitted to that provider's servers over the internet for processing.
+    Data sent via these APIs is <strong>not private</strong> in the same way as local processing &mdash;
+    it is subject to each provider's data retention and usage policies.
+    <strong>You are solely liable</strong> for any data you choose to transmit to a third-party service
+    through this application.
+  </p>
+
+  <p style="color: #374151; margin-bottom: 0.75rem;">
+    Before using cloud providers with research data, consider your obligations under applicable
+    research ethics frameworks, institutional review board (IRB) requirements, and legal regulations
+    including HIPAA, FERPA, GDPR, and any other laws governing personally identifiable,
+    sensitive, or confidential information. When in doubt, use Ollama for fully local,
+    offline analysis.
+  </p>
+
+  <h3 style="color: #166534; font-size: 1rem; margin-top: 1rem;">Error Reports &amp; Suggestions</h3>
+
+  <p style="color: #374151; margin-bottom: 0.75rem;">
+    If the application encounters an unexpected error, you will be asked whether you would like
+    to send an anonymous crash report to the developer. This report contains only the error
+    message, your operating system and browser type, and the app version.
+    <strong>No project data, documents, AI prompts, or personal information</strong>
+    is ever included in crash reports.
+  </p>
+
+  <p style="color: #374151; margin-bottom: 0.75rem;">
+    You may also submit suggestions or feedback through the &ldquo;Submit Suggestion&rdquo; button.
+    These messages are sent anonymously unless you choose to include your email address.
+  </p>
+
+  <p style="color: #374151; font-weight: 600; margin-bottom: 0;">
+    No data is sent automatically. Crash reports and suggestions are only transmitted when you
+    explicitly choose to send them.
+  </p>
+</div>
+
+<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0;" />
+
+<h2 style="color: #111827; font-size: 1.2rem;">Acknowledgments</h2>
+
+<p>
+  The development of QUAILS was initially supported by grants from the
+  <b>National Artificial Intelligence Research Resource (NAIRR) Pilot</b>
+  (grant #NAIRR240415)/<b>NSF</b> and <b>OpenAI</b>.
+</p>
+
+<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0;" />
+
+<h2 style="color: #111827; font-size: 1.2rem;">Disclaimer</h2>
+
+<p style="color: #374151; margin-bottom: 0.75rem;">
+  This software is provided under the
+  <a href="{{ license_url }}" target="_blank" style="color: #4f46e5;">MIT License</a>.
+</p>
+
+<p style="color: #374151; margin-bottom: 0.75rem; font-style: italic;">
+  THE SOFTWARE IS PROVIDED &ldquo;AS IS&rdquo;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+</p>
+
+<p style="color: #374151; margin-bottom: 0;">
+  You assume all responsibility for your use of this application, including
+  compliance with applicable laws, regulations, and institutional policies
+  governing data privacy, research ethics, and the use of artificial intelligence.
+  The developer is not liable for any consequences arising from the use or misuse
+  of this software or any data processed by it.
+</p>
+
+<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0;" />

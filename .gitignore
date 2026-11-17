@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# Node
+node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime data
+projects/
+backend/tools/
+backend/logs/
+backend/backend.log
+
+# Env
+.env
+
+# Claude Code
+.claude/
+
+# Documentation
+SAVESTATE.md
+plan.md
+
+# Marketing website (local only, not for remote)
+website/
+
+# Preprint working files (local only, never committed)
+preprint/

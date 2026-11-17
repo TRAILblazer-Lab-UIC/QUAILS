@@ -1,0 +1,29 @@
+/* AG Grid light theme overrides */
+.ag-theme-alpine {
+  --ag-background-color: #ffffff;
+  --ag-header-background-color: #f9fafb;
+  --ag-row-hover-color: #f3f4f6;
+  --ag-border-color: #e5e7eb;
+  --ag-font-size: 13px;
+}
+
+/* Confidence color coding */
+.confidence-high {
+  background-color: rgba(21, 128, 61, 0.1) !important;
+  color: #15803d;
+}
+
+.confidence-medium {
+  background-color: rgba(161, 98, 7, 0.1) !important;
+  color: #a16207;
+}
+
+.confidence-low {
+  background-color: rgba(220, 38, 38, 0.1) !important;
+  color: #dc2626;
+}
+
+.confidence-cell {
+  font-weight: 600;
+  text-align: right;
+}

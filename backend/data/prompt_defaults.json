@@ -1,0 +1,55 @@
+{
+  "categoryBuild": {
+    "categorization": {
+      "systemTemplate": "You are organizing research themes into categories. Create at most {{maxCategories}} categories. For each category, provide a title and list which themes belong to it. Format as markdown.",
+      "userTemplate": "Organize these themes into categories:\n\n{{themeSummary}}"
+    },
+    "consoleComplete": "Category report generated with up to {{maxCategories}} categories"
+  },
+  "customPrompt": {
+    "consoleComplete": "Custom prompt block {{blockId}} complete",
+    "execution": {
+      "systemTemplate": "{{blockPrompt}}",
+      "userTemplate": "{{inputData}}"
+    }
+  },
+  "rubricAnalysis": {
+    "consoleHeader": "── Rubric Analysis ───────────────────────────────\nModel: {{model}} | Context window: {{numCtx}} tokens\ntemperature={{temperature}} | seed={{seed}} | top_k={{topK}} | top_p={{topP}} | repeat_penalty={{repeatPenalty}}\nUnit type: {{unitType}} | Rubric items: {{rubricCount}} | Label threshold: {{labelThreshold}}%\nTotal units: {{totalUnits}} | Starting at: {{startIndex}}\n─────────────────────────────────────────────────",
+    "consoleUnit": "[RUBRIC] {{unitId}} — rubric_{{rubricIndex}}: {{score}} (conf: {{confidence}}%) | {{justification}}",
+    "scoring": {
+      "contextPostTemplate": "Here is additional text that appeared after the unit to be analyzed to provide additional context, but do not analyze this text, only use it for additional context: {{postContext}}.",
+      "contextPreTemplate": "[END TEXT TO ANALYZE]. \nHere is additional text that appeared before the unit to be analyzed to provide additional context, but do not analyze this text, only use it for additional context: {{preContext}}.\n",
+      "reasoningPrompt": "Provide your reasoning for this score in fewer than {{reasoningWords}} words.",
+      "reasoningWords": 20,
+      "systemTemplate": "You will analyze a single unit of text and provide an output that is only one single token based on a rubric or criteria list using the following instructions. The description of the rubric from which you will evaluate is: {{rubricTitle}}, {{rubricDescription}}. Considering the rubric description, you must output only one single token as a label or score as indicated in the rubric criteria that follows: {{blockPrompt}}.",
+      "unitIntro": "Now, the following is a {{unitType}}, the single piece of text that will be analyzed and scored or labeled with the rubric just entered. Analyze all of the following text and assign as output only a single token, based on the instructions and rubric criteria indicated above: [BEGIN TEXT TO ANALYZE]"
+    }
+  },
+  "sourceAnalysis": {
+    "consoleHeader": "── Detection prompt ──────────────────────────────\n{{detectionPrompt}}\n── Label prompt ──────────────────────────────────\n{{labelPrompt}}\n── Settings ──────────────────────────────────────\nModel: {{model}} | Context window: {{numCtx}} tokens\ntemperature={{temperature}} | seed={{seed}} | top_k={{topK}} | top_p={{topP}} | repeat_penalty={{repeatPenalty}}\nUnit type: {{unitType}} | Detection threshold: {{detectionThreshold}}% | Label threshold: {{labelThreshold}}%\nTotal units: {{totalUnits}} | Starting at: {{startIndex}}\n─────────────────────────────────────────────────",
+    "consoleUnit": "[{{verdict}}] {{unitId}} — \"{{snippet}}...\" → {{label}} (conf: {{confidence}}%) | {{reasoning}}",
+    "detection": {
+      "contextPostTemplate": "Here is text that appeared after this unit to provide context:\n{{postContext}}",
+      "contextPreTemplate": "Here is text that appeared before this text unit to provide context:\n{{preContext}}",
+      "reasoningPrompt": "Provide your reasoning for this response in fewer than {{reasoningWords}} words.",
+      "reasoningWords": 20,
+      "systemTemplate": "You are analyzing a single piece of text from a dataset and providing a response based on the following instructions: {{blockPrompt}}.",
+      "unitIntro": "The following is the {{unitType}} from the dataset that you will analyze and provide either a TRUE or FALSE output, based on the instructions you received above:"
+    },
+    "labeling": {
+      "reasoningPrompt": "Provide your reasoning for giving this label in fewer than {{reasoningWords}} words.",
+      "reasoningWords": 20
+    }
+  },
+  "themeIdent": {
+    "consoleUnit": "[THEME] row {{rowNum}} → {{themeId}}: {{themeTitle}}",
+    "themeComparison": {
+      "systemTemplate": "You are evaluating whether a label belongs to a theme. Respond with only TRUE or FALSE.",
+      "userTemplate": "Label: {{label}}\nRationale: {{reasoning}}\n\nTheme: {{themeTitle}}\nDescription: {{themeDescription}}\n\nIs this label related to this theme?"
+    },
+    "titleGeneration": {
+      "systemTemplate": "Generate a 1-2 word theme title for this label. Respond with only the theme title.",
+      "userTemplate": "Label: {{label}}\nRationale: {{reasoning}}"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=QUAILS
+Comment=Qualitative AI Labeling Support
+Exec=/path/to/quails/start_linux.sh
+Icon=/path/to/quails/logo.png
+Terminal=true
+Type=Application
+Categories=Development;
+StartupNotify=true
