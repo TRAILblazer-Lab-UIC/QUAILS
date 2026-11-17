@@ -1,7 +1,7 @@
 # QUAILS — Qualitative AI Labeling Support
 
 **[UIC TRAILblazer Lab](https://www.trailblazerlab.org)** · Jeremy Riel, PI<br>
-*Developed with support from the U.S. NAIRR Pilot and OpenAI.*
+*Developed with support from the U.S. National Artificial Intelligence Research Resource (NAIRR) Pilot (grant #NAIRR240415)/NSF and OpenAI.*
 
 A local Python/React/Flask web application for automating thematic text analysis in qualitative research. Uses open-weight LLMs that run entirely on your own computer through Ollama, with a visual flow editor for designing multi-round analysis workflows. At each step, QUAILS flags results that need human review: low-confidence decisions, rejected units, and checkpoints between analysis rounds.
 
