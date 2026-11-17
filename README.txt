@@ -104,7 +104,7 @@ these, skip to section 2.
                 "Add Python to PATH"
      To verify: open a terminal and type: python --version
 
-  B) NODE.JS (18 or newer)
+  B) NODE.JS (20.19+ or 22.12+; the current LTS version is fine)
      Download: https://nodejs.org/ (choose the LTS version)
      This also installs npm automatically.
      To verify: open a terminal and type: node --version
@@ -130,15 +130,29 @@ these, skip to section 2.
   OPTION A - AUTOMATIC (recommended):
 
     Windows: Double-click "start.bat"
-    Mac/Linux: Open terminal in the QUAILS folder, run: ./start.sh
+    macOS:   Double-click "start.command"
+    Linux:   Double-click "start_linux.sh" (or run ./start_linux.sh)
 
-    The launcher script will automatically:
-      - Check that Python, Node.js, and Git are installed
-      - Install all Python packages (backend)
-      - Install all npm packages (frontend)
-      - Start Ollama if it's installed
-      - Launch the application
-      - Open your browser
+    The launcher is also the installer. Every time it runs, it:
+      - Checks that Python, Node.js, npm, Git and Ollama are installed
+        and new enough
+      - Creates a private Python environment in backend/.venv (first run)
+      - Checks every package in backend/requirements.txt and installs only
+        what is missing or out of date
+      - Installs the frontend packages when they have changed
+      - Starts Ollama if it isn't running, launches QUAILS, and opens your
+        browser
+
+    The first launch can take several minutes. Logs are in backend/logs/.
+
+    If your computer warns that the launcher is from an unverified
+    developer:
+      - macOS: click Done, open System Settings > Privacy & Security, and
+        click "Open Anyway" next to the message about start.command.
+        (macOS 14 and earlier: Control-click start.command > Open.)
+      - Windows: click "More info", then "Run anyway".
+      - Linux: right-click start_linux.sh > Properties > Permissions and
+        tick "Allow executing file as program".
 
   OPTION B - MANUAL:
 
@@ -146,6 +160,9 @@ these, skip to section 2.
 
     2. Install backend (Python) dependencies:
          cd backend
+         python -m venv .venv
+         (Mac/Linux) source .venv/bin/activate
+         (Windows)   .venv\Scripts\activate
          pip install -r requirements.txt
 
     3. Install frontend (Node.js) dependencies:
@@ -162,11 +179,13 @@ these, skip to section 2.
   QUICK START:
 
     Windows: Double-click "start.bat"
-    Mac/Linux: Open terminal, run: ./start.sh
+    macOS:   Double-click "start.command"
+    Linux:   Double-click "start_linux.sh"
 
     The app opens in your browser at: http://localhost:5173
 
-    To stop: close the terminal windows (Windows) or press Ctrl+C (Mac/Linux).
+    To stop: double-click "stop.bat" (Windows) or "stop.command" (macOS),
+    or close the launcher window (macOS/Linux).
 
   MANUAL START (if you prefer):
 
@@ -357,7 +376,10 @@ these, skip to section 2.
 
   quails/
   ├── start.bat              <-- Double-click to run (Windows)
-  ├── start.sh               <-- Run to start (Mac/Linux)
+  ├── start.command          <-- Double-click to run (macOS)
+  ├── start_linux.sh         <-- Double-click to run (Linux)
+  ├── start.sh               <-- Shared launcher for macOS/Linux
+  ├── stop.bat / stop.command / stop.sh  <-- Stop QUAILS
   ├── README.txt             <-- This file
   ├── backend/               <-- Python/Flask server
   │   ├── app.py             <-- Backend entry point

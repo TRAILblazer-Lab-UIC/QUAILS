@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
-# macOS double-click stopper — delegates to stop.sh
-cd "$(dirname "$0")" && bash stop.sh
+# QUAILS one-click stopper for macOS: double-click this file in Finder.
+cd "$(dirname "$0")" || exit 1
+exec bash stop.sh

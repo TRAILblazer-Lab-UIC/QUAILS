@@ -4,50 +4,103 @@ A local Python/React/Flask web application for automating thematic text analysis
 
 > **Data Privacy:** No data ever leaves your machine — all LLM inference runs entirely on your local hardware through Ollama. You remain responsible for handling research data in line with research ethics, IRB requirements, and legal regulations (HIPAA, FERPA, GDPR, etc.) regarding personally identifiable information (PII) or confidential data. This software is provided "AS-IS" without warranty of any kind.
 
-## Prerequisites
+> 🚧 **QUAILS is a work in progress and is actively being updated.** Features, file formats and outputs may change between releases, and some features described here are still being built or refined. Please [open an issue](https://github.com/TRAILblazer-Lab-UIC/QUAILS/issues) if you find a bug or have a suggestion.
 
-- Python 3.14+
-- Node.js 24+ / npm 11+
-- Ollama (with at least one model installed, e.g., `gemma3`)
-- Git
+## Getting started
 
-## Setup
+### 1. Install the prerequisites
 
-### Backend
+Install these once. The launcher checks for each one and tells you what is missing.
+
+| Software | Version | Download |
+|---|---|---|
+| Python | 3.10 or newer | https://www.python.org/downloads/ (on Windows, tick **"Add python.exe to PATH"**) |
+| Node.js | 20.19+ or 22.12+ (the current LTS is fine) | https://nodejs.org/ |
+| Git | any recent version | https://git-scm.com/downloads (macOS: run `xcode-select --install`) |
+| Ollama | any recent version | https://ollama.com/download |
+
+After installing Ollama, download at least one model, for example `ollama pull gemma3`. You can also find and download models that fit your computer from **AI Settings** inside QUAILS.
+
+### 2. Download QUAILS
+
+Either clone the repository:
 
 ```bash
-cd backend
-pip install -r requirements.txt
+git clone https://github.com/TRAILblazer-Lab-UIC/QUAILS.git
 ```
 
-Note: spaCy is incompatible with Python 3.14 — the app uses a regex-based sentence segmenter as a fallback.
+or click **Code → Download ZIP** on this page and unzip it. QUAILS can live in any folder; nothing is tied to a specific location.
 
-### Frontend
+### 3. Start QUAILS with one click
+
+| Your computer | Double-click | To stop |
+|---|---|---|
+| macOS | `start.command` | Close the Terminal window, or double-click `stop.command` |
+| Windows | `start.bat` | Double-click `stop.bat` |
+| Linux | `start_linux.sh` (choose **Run** or **Run in Terminal**) | Close the terminal window, or run `./stop.sh` |
+
+The launcher is also the installer. Every time it runs, it:
+
+- checks that Python, Node.js, npm, Git and Ollama are installed and new enough;
+- creates a private Python environment in `backend/.venv` on the first run, so nothing is installed into your system Python;
+- checks every package listed in `backend/requirements.txt` and installs only what is missing or out of date;
+- installs the frontend packages on the first run, and again whenever they change;
+- starts Ollama if it isn't already running, then starts QUAILS and opens http://localhost:5173 in your browser.
+
+The first launch downloads packages and can take several minutes. Later launches start in seconds. On Linux, the first launch also adds QUAILS to your applications menu. If a step fails, the window stays open with the error message. Logs are written to `backend/logs/`.
+
+### 4. If your computer warns that the launcher is unverified
+
+The launchers are plain scripts that you can read in any text editor. They aren't signed with a paid developer certificate, so your operating system may warn you the first time you open one. To allow it:
+
+**macOS** ("Apple could not verify 'start.command' is free of malware", or "unidentified developer")
+1. Click **Done** (or **OK**). Don't click Move to Trash.
+2. Open **System Settings → Privacy & Security** and scroll down to **Security**.
+3. Next to the message about `start.command`, click **Open Anyway**, then enter your password.
+4. Double-click `start.command` again and click **Open**.
+
+On macOS 14 (Sonoma) and earlier, you can instead Control-click (or right-click) `start.command`, choose **Open**, then click **Open**. Do the same for `stop.command` the first time you use it.
+
+*Terminal alternative:* allow the whole folder at once with `xattr -dr com.apple.quarantine /path/to/QUAILS`. If macOS says the file can't be executed because you lack permissions, run `chmod +x /path/to/QUAILS/*.command /path/to/QUAILS/*.sh`.
+
+**Windows** ("Windows protected your PC" from Microsoft Defender SmartScreen)
+1. Click **More info**.
+2. Click **Run anyway**.
+
+If you see "Open File – Security Warning" instead, click **Run**. To stop the warnings permanently, right-click `start.bat` → **Properties**, tick **Unblock** at the bottom of the General tab, and click **OK**. If you downloaded the ZIP, you can unblock the ZIP file the same way *before* unzipping it, which unblocks every file inside.
+
+**Linux** (double-clicking opens the script in a text editor, or nothing happens)
+1. Make the launchers executable: right-click `start_linux.sh` → **Properties → Permissions** and tick **Allow executing file as program**. Or, in a terminal: `chmod +x start_linux.sh start.sh stop.sh`.
+2. Double-click `start_linux.sh` again and choose **Run** or **Run in Terminal**. In GNOME Files you may need to right-click and choose **Run as a Program**.
+
+Or just run `./start_linux.sh` from a terminal in the QUAILS folder.
+
+### 5. First steps in QUAILS
+
+1. Open **AI Settings** from the home page and choose the Ollama model to use.
+2. Click **New Project**, then upload your documents.
+3. Build an analysis flow in the **Analysis Builder** and run it block by block, reviewing the flagged results between rounds.
+
+`README.txt` (also available inside the app) has a step-by-step guide and troubleshooting tips.
+
+### Manual setup (for developers)
+
+If you prefer to run the two servers yourself:
 
 ```bash
+# Terminal 1: backend (Flask), runs on http://127.0.0.1:5174
+cd backend
+python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
+
+# Terminal 2: frontend (Vite), runs on http://localhost:5173 and proxies API calls to Flask
 cd frontend
 npm install
-```
-
-## Running
-
-Start both servers:
-
-**Terminal 1 — Backend (Flask):**
-```bash
-cd backend
-python app.py
-```
-Backend runs on http://127.0.0.1:5174
-
-**Terminal 2 — Frontend (Vite dev server):**
-```bash
-cd frontend
 npm run dev
 ```
-Frontend runs on http://localhost:5173 (proxies API calls to Flask)
 
-Ensure Ollama is running (`ollama serve`) — the app will attempt to auto-start it if not. Choose the model to use in **AI Settings** from the home page.
+Make sure Ollama is running (`ollama serve`). The app tries to start it if it isn't.
 
 ## Hardware & performance (Apple Silicon, NVIDIA GB10 / DGX Spark, unified memory)
 
