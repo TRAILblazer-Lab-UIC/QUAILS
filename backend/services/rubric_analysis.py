@@ -72,16 +72,20 @@ def run_rubric_analysis(project_id, block_id, block_data, model_params=None):
         sentence_split_delimiters=resolve_split_delimiters(block_data),
     )
     total = len(units)
+    if total == 0:
+        from services.pipeline import BlockFailed
+        raise BlockFailed("No text units were found for this block. Check its data source and unit of analysis, and that documents are uploaded.")
 
     # Load or create save state
     state = load_state(block_dir)
     start_index = state.get("completed_count", 0)
+    error_units = list(state.get("error_units") or [])
     line_number = state.get("line_number", start_index)
 
     rubric_items = block_data.get("rubric_items", [])
     if not rubric_items:
-        emit_log(socketio, f"Block {block_id}: no rubric_items configured, skipping.", "warn", project_id)
-        return
+        from services.pipeline import BlockFailed
+        raise BlockFailed("No rubric items are set. Add at least one rubric item in the block settings.")
 
     label_threshold = block_data.get("label_threshold",
         project.get("thresholds", {}).get("label", 70.0))
@@ -279,14 +283,22 @@ def run_rubric_analysis(project_id, block_id, block_data, model_params=None):
             emit_progress(socketio, block_id, i + 1, total, project_id)
             for msg, level in logs:
                 emit_log(socketio, msg, level, project_id)
+                if level == "error":
+                    error_units.append(msg)
             row["line_number"] = line_number
             row["timestamp"] = datetime.utcnow().isoformat() + "Z"
             labels_writer.writerow(row)
             line_number += 1
-            save_state(block_dir, {"completed_count": i + 1, "line_number": line_number})
+            save_state(block_dir, {"completed_count": i + 1, "line_number": line_number, "error_units": error_units})
 
     finally:
         labels_file.close()
+
+    if error_units and not is_stopped(project_id):
+        from services.pipeline import BlockFailed
+        raise BlockFailed(
+            f"{len(error_units)} of {total} units could not be analyzed because the model returned an error "
+            f"(first: {error_units[0]}). Clear this block and run it again so that every unit is coded.")
 
     from services.version_control import commit_project
     commit_project(proj_dir, f"Block {block_id} rubric analysis complete")

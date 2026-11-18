@@ -20,6 +20,7 @@ def run_category_building(project_id, block_id, block_data, model_params=None):
 
     proj_dir = os.path.join(PROJECTS_DIR, project_id)
     block_dir = os.path.join(proj_dir, "blocks", block_id)
+    os.makedirs(block_dir, exist_ok=True)
 
     with open(os.path.join(proj_dir, "project.json"), "r", encoding="utf-8") as f:
         project = json.load(f)
@@ -37,15 +38,15 @@ def run_category_building(project_id, block_id, block_data, model_params=None):
 
     max_categories = block_data.get("max_categories", project.get("max_categories", 6))
 
-    # Load themes from upstream block
-    input_block = block_data.get("input_block_id", "")
-    themes_path = ""
-    if input_block:
-        themes_path = os.path.join(proj_dir, "blocks", input_block, f"{input_block}_themes.csv")
+    from services.pipeline import BlockFailed
 
-    if not themes_path or not os.path.exists(themes_path):
-        emit_log(socketio, f"Themes CSV not found for block {block_id}", "error", project_id)
-        return
+    # Load themes from the upstream Theme Identification block
+    input_block = block_data.get("input_block_id", "")
+    if not input_block:
+        raise BlockFailed("No input connected. Connect a Theme Identification block to the Category Builder.")
+    themes_path = os.path.join(proj_dir, "blocks", input_block, f"{input_block}_themes.csv")
+    if not os.path.exists(themes_path):
+        raise BlockFailed(f"No theme list found from {input_block}. Run the Theme Identification block first.")
 
     themes = []
     with open(themes_path, "r", encoding="utf-8", newline="") as f:
@@ -54,8 +55,7 @@ def run_category_building(project_id, block_id, block_data, model_params=None):
             themes.append(row)
 
     if not themes:
-        emit_log(socketio, "No themes to categorize", "warn", project_id)
-        return
+        raise BlockFailed(f"The theme list from {input_block} is empty, so there is nothing to categorize.")
 
     # Build theme summary for LLM
     theme_summary = "\n".join(
@@ -82,10 +82,13 @@ def run_category_building(project_id, block_id, block_data, model_params=None):
         {"role": "user", "content": user_content},
     ]
 
+    from services.llm_utils import write_run_environment
+    write_run_environment(block_dir, client, 1)
     result = client.chat(messages, temperature=0.3, num_predict=1024)
     if result.get("error"):
-        emit_log(socketio, f"Category building error: {result['error']}", "error", project_id)
-        return
+        raise BlockFailed(f"The model returned an error: {result['error']}")
+    if not (result.get("content") or "").strip():
+        raise BlockFailed("The model returned an empty category report.")
 
     report_content = f"# Category Report\n\n{result.get('content', '')}\n"
 

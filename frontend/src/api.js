@@ -60,6 +60,9 @@ export const getBlockFiles = (projectId, blockId) => api.get(`/analysis/${projec
 export const getBlockState = (projectId, blockId) => api.get(`/analysis/${projectId}/block-state/${blockId}`)
 export const clearBlockState = (projectId, blockId) => api.post(`/analysis/${projectId}/block-clear/${blockId}`)
 export const openPath = (projectId, relativePath) => api.post(`/analysis/${projectId}/open-path`, { relative_path: relativePath })
+export const getReviews = (projectId) => api.get(`/analysis/${projectId}/reviews`)
+export const approveReview = (projectId, reviewId, note) => api.post(`/analysis/${projectId}/reviews/${reviewId}/approve`, { note })
+export const revokeReview = (projectId, reviewId) => api.post(`/analysis/${projectId}/reviews/${reviewId}/revoke`)
 
 // Alignment (new per-block workflow)
 export const getAlignmentBlocks = (projectId) => api.get(`/alignment/${projectId}/blocks`)

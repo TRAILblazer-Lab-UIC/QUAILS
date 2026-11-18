@@ -43,29 +43,9 @@ def validate_flow(project_id):
     with open(flow_path, "r", encoding="utf-8") as f:
         flow = json.load(f)
 
-    errors = []
-    nodes = flow.get("nodes", [])
-    edges = flow.get("edges", [])
-
-    # Check for at least a start and end node
-    node_types = [n.get("type", "") for n in nodes]
-    if "projectSpec" not in node_types:
-        errors.append("Flow must have a Project Spec (start) node")
-    if "outputsReport" not in node_types:
-        errors.append("Flow must have an Outputs Report (end) node")
-
-    # Check that all edges reference existing nodes
-    node_ids = {n["id"] for n in nodes}
-    for edge in edges:
-        if edge.get("source") not in node_ids:
-            errors.append(f"Edge references missing source node: {edge.get('source')}")
-        if edge.get("target") not in node_ids:
-            errors.append(f"Edge references missing target node: {edge.get('target')}")
-
-    # Check for analysis blocks between start and end
-    analysis_types = {"sourceAnalysis", "themeIdent", "categoryBuild", "customPrompt"}
-    has_analysis = any(t in analysis_types for t in node_types)
-    if not has_analysis:
-        errors.append("Flow must have at least one analysis block")
+    from models.flow_graph import FlowGraph
+    graph = FlowGraph(os.path.join(PROJECTS_DIR, project_id))
+    graph._data = flow
+    errors = graph.validate()
 
     return jsonify({"valid": len(errors) == 0, "errors": errors})

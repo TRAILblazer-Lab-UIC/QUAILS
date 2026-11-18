@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { listDocuments, listFolders, getParsedDoc, getDocumentColumns, getBlockFiles, getBlockState, clearBlockState, resumeAnalysis, openPath, getFlow, ensureColumnReparsed } from '../../api'
+import { listDocuments, listFolders, getParsedDoc, getDocumentColumns, getBlockFiles, getBlockState, clearBlockState, resumeAnalysis, openPath, getFlow, ensureColumnReparsed, generateReport, listReports } from '../../api'
 import HelpLabel from '../common/HelpLabel'
 import DelimiterListInput from '../common/DelimiterListInput'
 import { findUpstreamAnalysisBlock, findAllUpstreamAnalysisBlocks } from './FlowEditor'
@@ -377,7 +377,141 @@ function ContextWindowControl({ nodeId, data, handleChange }) {
   )
 }
 
-export default function NodeExpandedPanel({ node, nodes, edges, projectId, onUpdate, onDelete, onClose, onRunBlock, onResumeBlock, onOpenInData }) {
+export default function NodeExpandedPanel({ node, nodes, edges, projectId, onUpdate, onDelete, onClose, onRunBlock, onResumeBlock, onOpenInData, reviewStatus = {}, onApproveReview, onRevokeReview, pipelineState, isRunning }) {
+  const [reviewNote, setReviewNote] = useState('')
+  const [reviewBusy, setReviewBusy] = useState(false)
+  const [reviewError, setReviewError] = useState('')
+  const [reports, setReports] = useState([])
+  const [reportBusy, setReportBusy] = useState(false)
+  const [reportError, setReportError] = useState('')
+
+  useEffect(() => {
+    setReviewNote(reviewStatus[node.id]?.note || '')
+    setReviewError('')
+    if (node.type === 'outputsReport' && projectId) {
+      listReports(projectId).then(res => setReports(res.data || [])).catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id, node.type, projectId, pipelineState?.state])
+
+  async function handleApprove(continueRun) {
+    setReviewBusy(true)
+    setReviewError('')
+    try {
+      await onApproveReview(node.id, reviewNote, { continueRun })
+    } catch (err) {
+      setReviewError(err.response?.data?.error || 'Could not record the approval.')
+    } finally {
+      setReviewBusy(false)
+    }
+  }
+
+  async function handleGenerateReport() {
+    setReportBusy(true)
+    setReportError('')
+    try {
+      await generateReport(projectId)
+      const res = await listReports(projectId)
+      setReports(res.data || [])
+    } catch (err) {
+      setReportError(err.response?.data?.error || 'Could not generate the report.')
+    } finally {
+      setReportBusy(false)
+    }
+  }
+
+  // ---- Review checkpoint approval ----
+  function renderReviewApproval() {
+    const rs = reviewStatus[node.id] || { status: 'waiting' }
+    const pausedHere = pipelineState?.state === 'paused' && pipelineState?.review_id === node.id
+    const labels = {
+      waiting: 'Waiting for the block before this checkpoint to finish.',
+      pending: 'The block has finished. Review its results, then approve.',
+      approved: `Approved${rs.approved_at ? ' ' + new Date(rs.approved_at).toLocaleString() : ''}.`,
+      outdated: 'The block was re-run after the last approval. Review the new results and approve again.',
+    }
+    return (
+      <div className={`rounded p-3 space-y-2 border ${pausedHere ? 'bg-amber-50 border-amber-300' : 'bg-white border-gray-200'}`}>
+        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Checkpoint approval</p>
+        {pausedHere && <p className="text-xs text-amber-800 font-medium">The pipeline is paused here.</p>}
+        <p className={`text-xs ${rs.status === 'approved' ? 'text-emerald-700' : rs.status === 'outdated' ? 'text-red-600' : 'text-gray-600'}`}>{labels[rs.status] || labels.waiting}</p>
+        {(rs.status === 'pending' || rs.status === 'outdated') && (
+          <>
+            <label className="block">
+              <span className="text-xs text-gray-500">Review note (saved in the audit trail)</span>
+              <textarea
+                value={reviewNote}
+                onChange={e => setReviewNote(e.target.value)}
+                rows={2}
+                placeholder="What you checked, and any concerns"
+                className="w-full mt-1 px-2 py-1 text-xs bg-gray-50 border border-gray-300 rounded text-gray-900"
+              />
+            </label>
+            <div className="flex gap-2">
+              <button
+                disabled={reviewBusy || isRunning}
+                onClick={() => handleApprove(true)}
+                className="flex-1 px-2 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
+              >
+                Approve and continue
+              </button>
+              <button
+                disabled={reviewBusy || isRunning}
+                onClick={() => handleApprove(false)}
+                className="px-2 py-1.5 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50"
+              >
+                Approve only
+              </button>
+            </div>
+          </>
+        )}
+        {rs.status === 'approved' && (
+          <>
+            {rs.note && <p className="text-xs text-gray-500">Note: {rs.note}</p>}
+            <button
+              disabled={isRunning}
+              onClick={() => onRevokeReview(node.id)}
+              className="text-xs text-gray-500 underline hover:text-gray-700 disabled:opacity-50"
+            >
+              Withdraw approval
+            </button>
+          </>
+        )}
+        {reviewError && <p className="text-xs text-red-600">{reviewError}</p>}
+      </div>
+    )
+  }
+
+  // ---- Outputs & Report panel ----
+  function renderReportSection() {
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded p-3 space-y-2">
+        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Final report</p>
+        <p className="text-xs text-gray-500">A full pipeline run writes the final report when every block has finished. You can also write one now from the current results.</p>
+        <button
+          disabled={reportBusy || isRunning}
+          onClick={handleGenerateReport}
+          className="w-full px-2 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
+        >
+          {reportBusy ? 'Writing report…' : 'Generate report now'}
+        </button>
+        {reportError && <p className="text-xs text-red-600">{reportError}</p>}
+        {reports.length > 0 ? (
+          <ul className="space-y-1">
+            {reports.map(f => (
+              <li key={f} className="flex items-center justify-between gap-2">
+                <span className="text-xs font-mono text-gray-700 truncate">{f}</span>
+                <button onClick={() => handleOpenPath(`reports/${f}`)} className="shrink-0 text-xs text-indigo-600 hover:text-indigo-800">📂 Explorer</button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-gray-400 italic">No reports yet.</p>
+        )}
+      </div>
+    )
+  }
+
   const sequenceOrder = useFlowOrder()
   const [data, setData] = useState({ ...node.data })
   const [docList, setDocList] = useState([])
@@ -826,6 +960,15 @@ export default function NodeExpandedPanel({ node, nodes, edges, projectId, onUpd
       )
     }
 
+    if (node.type === 'categoryBuild' && upstream.type !== 'themeIdent') {
+      return (
+        <div className="bg-red-50 border border-red-200 rounded p-3">
+          <p className="text-xs text-red-700 font-medium">Wrong input</p>
+          <p className="text-xs text-red-600 mt-0.5">Category Builder needs a Theme Identification block as its input. It is connected to {upstream.data?.label || upstream.id}. Route open-coding or rubric results through Theme Identification first.</p>
+        </div>
+      )
+    }
+
     const upstreamOutputFormat = upstream.data?.output_format
     const inputFilename = getPrimaryInputFile(upstream.id, upstream.type, upstreamOutputFormat)
     const inputRelPath = inputFilename ? `blocks/${upstream.id}/${inputFilename}` : null
@@ -875,6 +1018,12 @@ export default function NodeExpandedPanel({ node, nodes, edges, projectId, onUpd
 
     return (
       <div className="bg-gray-50 border border-gray-200 rounded p-3 space-y-2">
+        {blockRunState?.failed && (
+          <div className="bg-red-50 border border-red-200 rounded p-2">
+            <p className="text-xs text-red-700 font-semibold">Last run failed</p>
+            <p className="text-xs text-red-600 mt-0.5">{blockRunState.error}</p>
+          </div>
+        )}
         <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Output files</p>
         <ul className="space-y-1.5">
           {expectedFiles.map(filename => {
@@ -1205,7 +1354,9 @@ export default function NodeExpandedPanel({ node, nodes, edges, projectId, onUpd
         )}
 
         {/* Human Review files section */}
+        {node.type === 'humanReview' && renderReviewApproval()}
         {node.type === 'humanReview' && renderHumanReviewSection()}
+        {node.type === 'outputsReport' && renderReportSection()}
 
         {/* Input section — shown for all analysis blocks */}
         {ANALYSIS_NODE_TYPES.has(node.type) && renderInputSection()}

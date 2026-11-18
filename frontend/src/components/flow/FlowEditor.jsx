@@ -24,8 +24,9 @@ import OutputsReportNode from './OutputsReportNode'
 import NodeExpandedPanel from './NodeExpandedPanel'
 import CustomEdge from './CustomEdge'
 import TeeEdge from './TeeEdge'
-import { FlowOrderContext } from './FlowOrderContext'
-import { getFlow, saveFlow, validateFlow, runAnalysis, stopAnalysis, resumeAnalysis } from '../../api'
+import { FlowOrderContext, ReviewStatusContext } from './FlowOrderContext'
+import { getFlow, saveFlow, validateFlow, runAnalysis, stopAnalysis, resumeAnalysis, getReviews, approveReview, revokeReview } from '../../api'
+import socket from '../../socket'
 import { usePromptSync } from '../../store/promptSync'
 
 const STEP_NUMBERED_TYPES = new Set(['sourceAnalysis', 'rubricAnalysis', 'themeIdent', 'categoryBuild', 'customPrompt'])
@@ -133,6 +134,10 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ projectId, onOpenI
   const [selectedNode, setSelectedNode] = useState(null)
   const [validationErrors, setValidationErrors] = useState([])
   const [isRunning, setIsRunning] = useState(false)
+  // Whole-pipeline run state: idle | running | paused | error | complete
+  const [pipeline, setPipeline] = useState({ state: 'idle' })
+  const [reviews, setReviews] = useState({})
+  const nodesRef = useRef([])
   const [addBlockExpanded, setAddBlockExpanded] = useState(false)
   const [blockOrder, setBlockOrder] = useState([])
   const [stepOrderExpanded, setStepOrderExpanded] = useState(false)
@@ -143,6 +148,8 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ projectId, onOpenI
   // population (a fresh project load is not a user edit).
   const skipAutosaveRef = useRef(true)
   const flowLoadedRef = useRef(false) // true once flow.json has been loaded into state
+
+  useEffect(() => { nodesRef.current = nodes }, [nodes])
 
   const sequenceOrder = useMemo(() => computeSequenceOrder(nodes, edges, blockOrder), [nodes, edges, blockOrder])
 
@@ -277,6 +284,15 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ projectId, onOpenI
         return { ...n, data: { ...n.data, input_block_ids: ids } }
       })
 
+      // Fill a missing single input (input_block_id) from the flow's connections.
+      // Template-built flows and older projects may lack it; the backend resolves
+      // inputs from edges as well, so this only keeps the settings panel accurate.
+      loadedNodes = loadedNodes.map(n => {
+        if (!ANALYSIS_NODE_TYPES.has(n.type) || n.type === 'themeIdent' || n.data?.input_block_id) return n
+        const upstream = findUpstreamAnalysisBlock(n.id, loadedNodes, loadedEdges)
+        return upstream ? { ...n, data: { ...n.data, input_block_id: upstream.id } } : n
+      })
+
       // Initialise blockOrder: restore from saved order, fill any missing ids, drop deleted ids
       const primaryNodeIds = new Set(loadedNodes.filter(n => n.type !== 'humanReview').map(n => n.id))
       const savedOrder = (data.blockOrder || []).filter(id => primaryNodeIds.has(id))
@@ -303,6 +319,18 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ projectId, onOpenI
   const onConnect = useCallback((params) => {
     const sourceNode = nodes.find(n => n.id === params.source)
     const targetNode = nodes.find(n => n.id === params.target)
+
+    // Category Builder groups a theme list; Theme Identification groups coded units.
+    if (sourceNode && targetNode && ANALYSIS_NODE_TYPES.has(sourceNode.type)) {
+      if (targetNode.type === 'categoryBuild' && sourceNode.type !== 'themeIdent') {
+        setValidationErrors(['Category Builder needs a Theme Identification block as its input. Route open-coding or rubric results through Theme Identification first.'])
+        return
+      }
+      if (targetNode.type === 'themeIdent' && !['sourceAnalysis', 'rubricAnalysis'].includes(sourceNode.type)) {
+        setValidationErrors(['Theme Identification reads coded units from Open-Coding or Rubric blocks.'])
+        return
+      }
+    }
 
     if (sourceNode && targetNode &&
         ANALYSIS_NODE_TYPES.has(sourceNode.type) &&
@@ -427,14 +455,61 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ projectId, onOpenI
     }
   }
 
+  const refreshReviews = useCallback(() => {
+    if (!projectId) return
+    getReviews(projectId).then(res => setReviews(res.data || {})).catch(() => {})
+  }, [projectId])
+
+  useEffect(() => { refreshReviews() }, [refreshReviews])
+
+  // Track whole-pipeline runs: pauses at review checkpoints, failures, final report.
+  useEffect(() => {
+    function onStarted(data) {
+      if (data.project_id !== projectId) return
+      setIsRunning(true)
+      if (!data.block_id) setPipeline({ state: 'running' })
+    }
+    function onBlockComplete() { refreshReviews() }
+    function onComplete(data) {
+      if (data && data.project_id && data.project_id !== projectId) return
+      setIsRunning(false)
+      refreshReviews()
+      setPipeline(prev => {
+        if (data?.paused) return { state: 'paused', ...data.paused }
+        if (data?.error) return { state: 'error', error: data.error }
+        if (prev.state === 'running') return { state: 'complete', report: data?.report }
+        return prev
+      })
+      if (data?.paused?.review_id) {
+        const reviewNode = nodesRef.current.find(n => n.id === data.paused.review_id)
+        if (reviewNode) setSelectedNode(reviewNode)
+      }
+      if (data?.report) {
+        setNodes(nds => nds.map(n => n.type === 'outputsReport'
+          ? { ...n, data: { ...n.data, reportPath: `reports/${data.report}` } } : n))
+      }
+    }
+    socket.on('analysis_started', onStarted)
+    socket.on('block_complete', onBlockComplete)
+    socket.on('analysis_complete', onComplete)
+    return () => {
+      socket.off('analysis_started', onStarted)
+      socket.off('block_complete', onBlockComplete)
+      socket.off('analysis_complete', onComplete)
+    }
+  }, [projectId, refreshReviews, setNodes])
+
   async function handleRun() {
     setIsRunning(true)
+    setValidationErrors([])
+    setPipeline({ state: 'running' })
     try {
       await handleSave()
       await runAnalysis(projectId)
     } catch (err) {
       console.error('Failed to start analysis:', err)
       setIsRunning(false)
+      setPipeline({ state: 'error', error: err.response?.data?.error || 'Could not start the pipeline.' })
     }
   }
 
@@ -444,7 +519,18 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ projectId, onOpenI
     } catch (err) {
       console.error('Failed to stop analysis:', err)
     }
-    setIsRunning(false)
+  }
+
+  async function handleApproveReview(reviewId, note, { continueRun = false } = {}) {
+    const res = await approveReview(projectId, reviewId, note)
+    refreshReviews()
+    if (continueRun) await handleRun()
+    return res.data
+  }
+
+  async function handleRevokeReview(reviewId) {
+    await revokeReview(projectId, reviewId)
+    refreshReviews()
   }
 
   async function handleRunBlock(blockId) {
@@ -663,6 +749,7 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ projectId, onOpenI
 
   return (
     <FlowOrderContext.Provider value={sequenceOrder}>
+    <ReviewStatusContext.Provider value={reviews}>
     <div className="h-full w-full relative" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={nodes}
@@ -800,6 +887,22 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ projectId, onOpenI
                 </div>
               )
             })()}
+            {/* Run the whole pipeline */}
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+              {isRunning ? (
+                <button onClick={handleStop} className="block px-2 py-1 text-xs bg-red-50 text-red-700 rounded-lg hover:bg-red-100 whitespace-nowrap">
+                  Stop
+                </button>
+              ) : (
+                <button
+                  onClick={handleRun}
+                  title="Run every block in order. The run pauses at each Human Review checkpoint until you approve it."
+                  className="block px-2 py-1 text-xs bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 whitespace-nowrap"
+                >
+                  Run pipeline
+                </button>
+              )}
+            </div>
             {/* Validate */}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
               <button onClick={handleValidate} className="block px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 whitespace-nowrap">
@@ -817,6 +920,24 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ projectId, onOpenI
               </div>
             )}
           </div>
+          {pipeline.state !== 'idle' && (
+            <div className={`mb-2 max-w-sm rounded-lg p-3 text-xs border ${
+              pipeline.state === 'error' ? 'bg-red-50 border-red-200 text-red-700'
+              : pipeline.state === 'paused' ? 'bg-amber-50 border-amber-200 text-amber-800'
+              : pipeline.state === 'complete' ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-white border-gray-200 text-gray-600'}`}>
+              {pipeline.state === 'running' && 'Pipeline running. Follow progress in the Activity Log.'}
+              {pipeline.state === 'paused' && (() => {
+                const up = nodes.find(n => n.id === pipeline.upstream_block_id)
+                return <>Paused for human review of <strong>{up?.data?.label || pipeline.upstream_block_id}</strong>. Check its results in the review panel, then click <strong>Approve and continue</strong>.</>
+              })()}
+              {pipeline.state === 'error' && <>Pipeline stopped. {pipeline.error}</>}
+              {pipeline.state === 'complete' && <>Pipeline complete.{pipeline.report ? <> Final report: <code>reports/{pipeline.report}</code></> : null}</>}
+              {pipeline.state !== 'running' && (
+                <button onClick={() => setPipeline({ state: 'idle' })} className="ml-2 underline opacity-70 hover:opacity-100">Dismiss</button>
+              )}
+            </div>
+          )}
           {validationErrors.length > 0 && (
             <div className="mb-2 bg-red-50 border border-red-200 rounded-lg p-3">
               {validationErrors.map((err, i) => (
@@ -839,9 +960,15 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ projectId, onOpenI
           onRunBlock={handleRunBlock}
           onResumeBlock={handleResumeBlock}
           onOpenInData={onOpenInData}
+          reviewStatus={reviews}
+          onApproveReview={handleApproveReview}
+          onRevokeReview={handleRevokeReview}
+          pipelineState={pipeline}
+          isRunning={isRunning}
         />
       )}
     </div>
+    </ReviewStatusContext.Provider>
     </FlowOrderContext.Provider>
   )
 })

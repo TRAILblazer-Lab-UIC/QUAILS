@@ -928,7 +928,12 @@ def _get_block(project_id, block_id):
         flow = json.load(f)
     for node in flow.get("nodes", []):
         if node["id"] == block_id:
-            return node.get("type"), node.get("data", {})
+            # Fill input_block_id(s) from the flow's connections so alignment
+            # uses the same inputs as an analysis run.
+            from models.flow_graph import FlowGraph
+            graph = FlowGraph(proj_dir)
+            graph._data = flow
+            return node.get("type"), graph.apply_resolved_inputs(block_id, node.get("data", {}))
     return None, None
 
 

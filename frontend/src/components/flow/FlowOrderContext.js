@@ -7,3 +7,10 @@ export const FlowOrderContext = createContext({})
 export function useFlowOrder() {
   return useContext(FlowOrderContext)
 }
+
+// Maps humanReview node id -> { status: waiting|pending|approved|outdated, approved_at, note, ... }
+export const ReviewStatusContext = createContext({})
+
+export function useReviewStatus() {
+  return useContext(ReviewStatusContext)
+}

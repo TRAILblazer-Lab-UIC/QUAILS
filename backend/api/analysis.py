@@ -20,7 +20,8 @@ def run_analysis(project_id):
     if not os.path.exists(proj_dir):
         return jsonify({"error": "Project not found"}), 404
 
-    if project_id in _running and _running[project_id].get("active"):
+    from services.analysis_engine import get_status
+    if get_status(project_id).get("active"):
         return jsonify({"error": "Analysis already running"}), 409
 
     body = request.get_json() or {}
@@ -59,18 +60,8 @@ def analysis_status(project_id):
 
 def _get_expected_output_files(block_id, block_type, output_format="markdown", block_data=None):
     """Return list of expected output filenames for a given block."""
-    if block_type == "sourceAnalysis":
-        return [f"{block_id}_labels.csv", f"{block_id}_false.csv"]
-    elif block_type == "rubricAnalysis":
-        return [f"{block_id}_labels.csv"]
-    elif block_type == "themeIdent":
-        return [f"{block_id}_themes.csv", f"revised{block_id}labels.csv"]
-    elif block_type == "categoryBuild":
-        return ["categoryReport.md"]
-    elif block_type == "customPrompt":
-        ext = "txt" if output_format == "text" else "md"
-        return [f"{block_id}_output.{ext}"]
-    return []
+    from services.pipeline import expected_output_files
+    return expected_output_files(block_id, block_type, output_format)
 
 
 @analysis_bp.route("/<project_id>/block-files/<block_id>", methods=["GET"])
@@ -147,7 +138,10 @@ def block_state(project_id, block_id):
         "block_id": block_id,
         "has_save_state": has_save_state,
         "completed_count": state_data.get("completed_count", 0),
-        "is_complete": state_data.get("completed", False),
+        "is_complete": bool(state_data.get("completed", False)) and not state_data.get("failed"),
+        "completed_at": state_data.get("completed_at"),
+        "failed": bool(state_data.get("failed")),
+        "error": state_data.get("error", ""),
         "output_files": output_files,
         "any_output_exist": any(f["exists"] for f in output_files),
     })
@@ -177,6 +171,59 @@ def block_clear(project_id, block_id):
                     os.remove(abs_path)
 
     return jsonify({"status": "cleared"})
+
+
+# ── Human review checkpoints ────────────────────────────────────────────────
+
+def _flow(project_id):
+    from models.flow_graph import FlowGraph
+    graph = FlowGraph(os.path.join(PROJECTS_DIR, project_id))
+    graph.load()
+    return graph
+
+
+def _review_ids(graph):
+    ids = [n["id"] for n in graph.nodes if n.get("type") == "humanReview"]
+    for e in graph.edges:
+        rid = (e.get("data") or {}).get("humanReviewId")
+        if rid and rid not in ids:
+            ids.append(rid)
+    return ids
+
+
+@analysis_bp.route("/<project_id>/reviews", methods=["GET"])
+def list_reviews(project_id):
+    """Status of every review checkpoint: waiting, pending, approved or outdated."""
+    if not os.path.exists(os.path.join(PROJECTS_DIR, project_id)):
+        return jsonify({"error": "Project not found"}), 404
+    from services.pipeline import review_status
+    graph = _flow(project_id)
+    out = {}
+    for rid in _review_ids(graph):
+        out[rid] = review_status(project_id, rid, graph.review_upstream(rid))
+    return jsonify(out)
+
+
+@analysis_bp.route("/<project_id>/reviews/<review_id>/approve", methods=["POST"])
+def approve_review_route(project_id, review_id):
+    from services.pipeline import approve_review
+    graph = _flow(project_id)
+    upstream = graph.review_upstream(review_id)
+    if not upstream:
+        return jsonify({"error": "This review checkpoint is not connected to an analysis block."}), 400
+    note = (request.get_json() or {}).get("note", "")
+    try:
+        return jsonify(approve_review(project_id, review_id, upstream, note))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@analysis_bp.route("/<project_id>/reviews/<review_id>/revoke", methods=["POST"])
+def revoke_review_route(project_id, review_id):
+    from services.pipeline import revoke_review, review_status
+    revoke_review(project_id, review_id)
+    graph = _flow(project_id)
+    return jsonify(review_status(project_id, review_id, graph.review_upstream(review_id)))
 
 
 @analysis_bp.route("/<project_id>/open-path", methods=["POST"])

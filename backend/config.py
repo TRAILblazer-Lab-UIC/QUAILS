@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 # Application metadata
 APP_TITLE = "QUAILS: Qualitative AI Labeling Support"
-APP_VERSION = "1.0"
+APP_VERSION = "1.0.1"
 APP_VERSION_DATE = "November 2026"
 APP_URL = "https://www.quailsai.com"
 APP_AUTHOR = "Jeremy Riel"

@@ -67,8 +67,11 @@ def run_theme_identification(project_id, block_id, block_data, model_params=None
                     all_fieldnames.append(field)
             emit_log(socketio, f"Loaded {len(r)} rows from block {bid}", "info", project_id)
         if not all_rows:
-            emit_log(socketio, f"No input rows found for block {block_id}", "error", project_id)
-            return
+            from services.pipeline import BlockFailed
+            if not input_block_ids:
+                raise BlockFailed("No input connected. Connect an Open-Coding or Rubric block to Theme Identification.")
+            raise BlockFailed("No coded units found from " + ", ".join(input_block_ids)
+                              + ". Run the connected block first.")
         rows = all_rows
         input_fieldnames = all_fieldnames
 

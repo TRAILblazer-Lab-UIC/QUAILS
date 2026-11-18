@@ -211,7 +211,7 @@ def export_project(project_id):
             zf.setpassword(password.encode())
 
         # Always include core project files
-        for filename in ("project.json", "flow.json", "inventory.json", "folders.json"):
+        for filename in ("project.json", "flow.json", "inventory.json", "folders.json", "reviews.json"):
             fpath = os.path.join(proj_dir, filename)
             if os.path.exists(fpath):
                 zf.write(fpath, f"project/{filename}")

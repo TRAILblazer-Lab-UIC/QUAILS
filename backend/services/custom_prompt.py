@@ -38,8 +38,8 @@ def run_custom_prompt(project_id, block_id, block_data, model_params=None):
     output_format = block_data.get("output_format", "markdown")
 
     if not custom_prompt:
-        emit_log(socketio, f"No prompt defined for custom block {block_id}", "error", project_id)
-        return
+        from services.pipeline import BlockFailed
+        raise BlockFailed("No prompt is set. Write the prompt in the block settings.")
 
     # Load input data
     input_text = ""
@@ -75,10 +75,12 @@ def run_custom_prompt(project_id, block_id, block_data, model_params=None):
         {"role": "user", "content": user_content},
     ]
 
+    from services.llm_utils import write_run_environment
+    write_run_environment(block_dir, client, 1)
     result = client.chat(messages, temperature=0.3, num_predict=2048)
     if result.get("error"):
-        emit_log(socketio, f"Custom prompt error: {result['error']}", "error", project_id)
-        return
+        from services.pipeline import BlockFailed
+        raise BlockFailed(f"The model returned an error: {result['error']}")
 
     content = result.get("content", "")
 

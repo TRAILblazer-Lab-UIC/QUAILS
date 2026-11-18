@@ -68,10 +68,14 @@ def run_source_analysis(project_id, block_id, block_data, model_params=None):
         sentence_split_delimiters=resolve_split_delimiters(block_data),
     )
     total = len(units)
+    if total == 0:
+        from services.pipeline import BlockFailed
+        raise BlockFailed("No text units were found for this block. Check its data source and unit of analysis, and that documents are uploaded.")
 
     # Load or create save state
     state = load_state(block_dir)
     start_index = state.get("completed_count", 0)
+    error_units = list(state.get("error_units") or [])
 
     # Get prompts from block data
     detection_prompt = block_data.get("detection_prompt", project.get("detection_prompt",
@@ -284,6 +288,8 @@ def run_source_analysis(project_id, block_id, block_data, model_params=None):
 
             if out["kind"] == "error":
                 emit_log(socketio, out["message"], "error", project_id)
+                error_units.append(out["message"])
+                save_state(block_dir, {"completed_count": i + 1, "line_number": line_number, "error_units": error_units})
                 continue
 
             unit = out["unit"]
@@ -308,7 +314,7 @@ def run_source_analysis(project_id, block_id, block_data, model_params=None):
                     "reasoning": out["reasoning"],
                 }), "info", project_id)
                 line_number += 1
-                save_state(block_dir, {"completed_count": i + 1, "line_number": line_number})
+                save_state(block_dir, {"completed_count": i + 1, "line_number": line_number, "error_units": error_units})
                 continue
 
             labels_writer.writerow({
@@ -332,11 +338,17 @@ def run_source_analysis(project_id, block_id, block_data, model_params=None):
             }), "info", project_id)
             line_number += 1
 
-            save_state(block_dir, {"completed_count": i + 1, "line_number": line_number})
+            save_state(block_dir, {"completed_count": i + 1, "line_number": line_number, "error_units": error_units})
 
     finally:
         labels_file.close()
         false_file.close()
+
+    if error_units and not is_stopped(project_id):
+        from services.pipeline import BlockFailed
+        raise BlockFailed(
+            f"{len(error_units)} of {total} units could not be analyzed because the model returned an error "
+            f"(first: {error_units[0]}). Clear this block and run it again so that every unit is coded.")
 
     from services.version_control import commit_project
     commit_project(proj_dir, f"Block {block_id} source analysis complete")

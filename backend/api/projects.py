@@ -123,7 +123,7 @@ def _build_flow_template(template):
             "id": "categoryBuild_1",
             "type": "categoryBuild",
             "position": {"x": x, "y": 800},
-            "data": {"label": "Category Builder"},
+            "data": {"label": "Category Builder", "input_block_id": "themeIdent_1"},
         },
         {
             "id": "outputsReport_1",
