@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, send_file, abort
 
 from config import (
     APP_TITLE, APP_VERSION, APP_VERSION_DATE,
-    APP_URL, APP_AUTHOR, APP_AUTHOR_URL, APP_LICENSE, APP_LICENSE_URL,
+    APP_URL, APP_AUTHOR, APP_LICENSE, APP_LICENSE_URL,
 )
 
 about_bp = Blueprint("about", __name__)
@@ -34,7 +34,6 @@ def get_about():
         "{{ version_date }}": APP_VERSION_DATE,
         "{{ url }}": APP_URL,
         "{{ author }}": APP_AUTHOR,
-        "{{ author_url }}": APP_AUTHOR_URL,
         "{{ license }}": APP_LICENSE,
         "{{ license_url }}": APP_LICENSE_URL,
         "{{ logo_url }}": "/logo.png",

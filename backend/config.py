@@ -9,7 +9,6 @@ APP_VERSION = "1.0"
 APP_VERSION_DATE = "November 2026"
 APP_URL = "https://www.quailsai.com"
 APP_AUTHOR = "Jeremy Riel"
-APP_AUTHOR_URL = "https://www.jeremyriel.com"
 APP_LICENSE = "MIT"
 APP_LICENSE_URL = "https://opensource.org/licenses/MIT"
 
